@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="fw-bold mb-2">Akıllı Yemek Tarifleri</h2>
+        <p class="text-dim">Buzdolabındaki malzemelerinize göre Gemini AI tarafından önerilen tarifler.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Sol Panel: Malzeme Seçim Listesi (Alt Alta Dikey Slotlar) -->
+    <div class="col-md-4 col-lg-3">
+        <div class="glass-card p-3 d-flex flex-column" style="max-height: 600px;">
+            <h5 class="text-white mb-2 fw-bold"><i class="fas fa-carrot text-primary me-2"></i> Malzeme Seçimi</h5>
+            <p class="text-dim small mb-3">Tarifte kullanılmasını istediğiniz malzemelerin üzerine tıklayarak seçin veya çıkarın.</p>
+            
+            <div class="d-flex flex-column gap-2 overflow-y-auto pr-1" id="inventory-slots" style="overflow-x: hidden;">
+                {% for item in items %}
+                <div class="inventory-slot p-2 rounded-3 border d-flex align-items-center gap-3 select-item-card position-relative" 
+                     data-name="{{ item.class_name }}"
+                     style="border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); cursor: pointer; transition: all 0.25s ease;"
+                     onclick="toggleSelectSlot(this)">
+                    
+                    <!-- Item Image / Thumbnail -->
+                    <div class="slot-img-container rounded-2 overflow-hidden d-flex justify-content-center align-items-center shadow-inner" style="width: 42px; height: 42px; background: rgba(255,255,255,0.04); flex-shrink: 0;">
+                        {% if item.image_path %}
+                        <img src="/static/{{ item.image_path }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                        <img src="/static/items_photos/{{ item.class_name | lower }}.jpg" 
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ item.class_name }}&background=6366f1&color=fff&size=42'"
+                             style="width: 100%; height: 100%; object-fit: cover;">
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Item Name and Quantity -->
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="fw-bold text-white text-truncate" style="font-size: 0.85rem;">{{ item.class_name }}</div>
+                        <div class="text-dim small" style="font-size: 0.72rem;">{{ item.quantity }} Adet Mevcut</div>
+                    </div>
+
+                    <!-- Checkmark Indicator -->
+                    <span class="badge bg-success rounded-circle select-badge" style="display: flex; width: 20px; height: 20px; padding: 0; justify-content: center; align-items: center; border: 1.5px solid #111; flex-shrink: 0;">
+                        <i class="fas fa-check" style="font-size: 0.6rem;"></i>
+                    </span>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted w-100">
+                    <i class="fas fa-info-circle mb-2 fa-2x opacity-20 d-block mx-auto"></i>
+                    <p class="m-0 small">Aktif malzeme bulunmuyor.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sağ Panel: Tarif Öneri Sonuçları -->
+    <div class="col-md-8 col-lg-9">
+        <div class="glass-card p-4 d-flex flex-column" style="min-height: 500px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="m-0 text-primary fw-bold"><i class="fas fa-magic me-2"></i> Şefin Önerileri</h5>
+                <button id="suggest-btn" class="btn btn-premium px-4">
+                    <i class="fas fa-wand-magic-sparkles me-2"></i> Tarif Öner
+                </button>
+            </div>
+            
+            <div id="recipe-box" class="recipe-content p-4 rounded-4 bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-white flex-grow-1 overflow-y-auto">
+                <div class="text-center p-5">
+                    <i class="fas fa-utensils fa-3x text-secondary mb-3 opacity-20"></i>
+                    <p class="text-white opacity-75">Sol panelden malzemelerinizi seçip butona basarak Gemini AI tarafından önerilen tarifleri alabilirsiniz.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedItems = [];
+
+    // Sayfa yüklendiğinde varsayılan olarak tüm aktif malzemeleri seç
+    document.querySelectorAll('.select-item-card').forEach(card => {
+        selectSlot(card);
+    });
+
+    function selectSlot(element) {
+        element.classList.add('selected');
+        const badge = element.querySelector('.select-badge');
+        if (badge) {
+            badge.style.display = 'flex';
+        }
+        const name = element.getAttribute('data-name');
+        if (!selectedItems.includes(name)) {
+            selectedItems.push(name);
+        }
+    }
+
+    function deselectSlot(element) {
+        element.classList.remove('selected');
+        const badge = element.querySelector('.select-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+        const name = element.getAttribute('data-name');
+        selectedItems = selectedItems.filter(item => item !== name);
+    }
+
+    function toggleSelectSlot(element) {
+        if (element.classList.contains('selected')) {
+            deselectSlot(element);
+        } else {
+            selectSlot(element);
+        }
+    }
+
+    document.getElementById('suggest-btn').onclick = function() {
+        const box = document.getElementById('recipe-box');
+        const btn = this;
+        
+        if (selectedItems.length === 0) {
+            Swal.fire({
+                title: 'Malzeme Seçilmedi',
+                text: 'Lütfen tarif oluşturulabilmesi için en az bir malzeme seçin.',
+                icon: 'warning',
+                background: '#1e1b4b',
+                color: '#ffffff',
+                confirmButtonColor: '#6366f1'
+            });
+            return;
+        }
+
+        box.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary mb-3"></div><p>Yapay zeka seçtiğiniz malzemelerle yemek düşünüyor, tarifleri hazırlıyor...</p></div>';
+        btn.disabled = true;
+
+        fetch('/api/suggest_recipes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items: selectedItems })
+        })
+        .then(res => res.json())
+        .then(data => {
+            box.innerHTML = data.recipes;
+            btn.disabled = false;
+        })
+        .catch(err => {
+            box.innerHTML = '<p class="text-danger">Bir hata oluştu. Lütfen tekrar deneyin.</p>';
+            btn.disabled = false;
+        });
+    };
+</script>
+
+<style>
+    .inventory-slot:hover {
+        transform: translateX(3px);
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(99, 102, 241, 0.3) !important;
+    }
+    .inventory-slot.selected {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.08) !important;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    }
+
+    .recipe-content h1, .recipe-content h2, .recipe-content h3 {
+        color: var(--accent);
+        margin-top: 25px;
+        font-weight: 600;
+    }
+    .recipe-content ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .recipe-content li {
+        margin-bottom: 10px;
+        padding-left: 25px;
+        position: relative;
+    }
+    .recipe-content li::before {
+        content: "\f058";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: var(--primary);
+    }
+</style>
+
+{% endblock %}

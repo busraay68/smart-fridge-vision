@@ -1,0 +1,377 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12 d-flex justify-content-between align-items-end">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-video me-2 text-primary"></i> Canlı Kamera Merkezi</h2>
+            <p class="text-dim">Telefonunuzu canlı kamera olarak kullanın, giren çıkan nesneleri otomatik takip edin.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- SOL: Canlı Kamera Yayını -->
+    <div class="col-md-7">
+        <div class="glass-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <h5 class="fw-bold m-0 me-3"><i class="fas fa-broadcast-tower text-danger me-2"></i> Canlı Yayın</h5>
+                    <!-- Kamera IP Seçici Panel -->
+                    <div class="d-flex align-items-center bg-dark bg-opacity-50 px-2 py-1 rounded-pill border border-secondary border-opacity-25" style="backdrop-filter: blur(5px);">
+                        <span class="small text-dim me-2 px-2" style="font-size: 0.75rem; border-right: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-wifi me-1 text-primary"></i>Kamera IP</span>
+                        <input type="text" id="cameraIpInput" class="bg-transparent border-0 text-white text-center shadow-none" value="{{ camera_ip }}" placeholder="192.168.1.X" style="font-size: 0.75rem; font-family: monospace; width: 100px; outline: none; padding: 0;">
+                        <button onclick="saveCameraIp()" class="btn btn-sm btn-link text-primary p-0 ps-2 pe-1 border-0" id="saveIpBtn" title="Kaydet" style="transition: transform 0.2s; outline: none; box-shadow: none;">
+                            <i class="fas fa-save" style="font-size: 0.85rem;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button onclick="toggleVision()" class="btn btn-premium rounded-pill px-4" id="visionToggleBtn">
+                        <i class="fas fa-play-circle me-1" id="toggleIcon"></i> <span id="toggleText">Sistemi Başlat</span>
+                    </button>
+                    <button onclick="captureAndAnalyze()" class="btn btn-glass-primary rounded-pill px-4" id="captureBtn" style="display: none; height: 38px;">
+                        <i class="fas fa-camera me-1"></i> Görüntü Al
+                    </button>
+                </div>
+            </div>
+            
+            <div class="position-relative bg-dark rounded-4 overflow-hidden border border-secondary border-opacity-25" style="min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                <!-- Ham IP kamera önizlemesi (başlamadan önce) -->
+                <img id="rawStream" src="{{ video_source }}" alt="IP Camera" class="w-100 h-100 object-fit-cover" style="display: none;">
+                
+                <!-- YOLO işlenmiş stream (başlatınca bu gösterilecek) -->
+                <img id="liveStream" src="" alt="Vision Stream" class="w-100 h-100 object-fit-cover" style="display: none;">
+                
+                <!-- Beklemede overlay -->
+                <div class="position-absolute text-center" id="streamOverlay">
+                    <i class="fas fa-video-slash fa-4x text-muted mb-3 opacity-50"></i>
+                    <h5 class="text-white">Sistem Beklemede</h5>
+                    <p class="text-dim small">Başlat butonuna basarak kamerayı aktif edin.</p>
+                </div>
+
+                <!-- Yükleniyor overlay -->
+                <div class="position-absolute text-center" id="loadingOverlay" style="display: none;">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <h5 class="text-white">YOLO Modeli Başlatılıyor...</h5>
+                    <p class="text-dim small">Kameraya bağlanılıyor, lütfen bekleyin.</p>
+                </div>
+                
+                <!-- Canlı REC ikonu -->
+                <div id="recIcon" class="position-absolute top-0 end-0 m-3 badge bg-danger" style="display: none; animation: pulse 1.5s infinite;">
+                    <i class="fas fa-circle me-1" style="font-size: 8px; vertical-align: middle;"></i> CANLI
+                </div>
+
+                <!-- Durum bilgisi -->
+                <div id="statusBadge" class="position-absolute top-0 start-0 m-3 badge bg-secondary" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAĞ: Canlı Olay Akışı -->
+    <div class="col-md-5">
+        <div class="glass-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold m-0"><i class="fas fa-list-ul text-info me-2"></i> Tespit Akışı</h5>
+                <span class="badge bg-dark border border-secondary" id="totalEventsBadge">0 Olay</span>
+            </div>
+
+            <div class="flex-grow-1 bg-dark bg-opacity-50 rounded-4 p-3 overflow-auto border border-secondary border-opacity-10" id="logContainer" style="max-height: 400px;">
+                <div class="text-center mt-5 text-muted" id="emptyLogMsg">
+                    <i class="fas fa-history fa-2x mb-2 opacity-25"></i>
+                    <p class="small">Henüz bir hareket tespit edilmedi.</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <form action="{{ url_for('vision_sync_route') }}" method="POST" id="syncForm">
+                    <button type="submit" class="btn w-100 py-3 fs-5" id="syncBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-database me-2"></i> Envantere İşle
+                    </button>
+                </form>
+                <small class="text-muted d-block text-center mt-2">İşlenen olaylar doğrudan stoklarınıza yansır.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .log-item {
+        animation: slideInRight 0.3s ease-out;
+    }
+    @keyframes slideInRight {
+        from { transform: translateX(20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+</style>
+
+<script>
+    function saveCameraIp() {
+        const ipVal = document.getElementById('cameraIpInput').value.trim();
+        if (!ipVal) {
+            alert('Lütfen geçerli bir IP adresi veya USB kamerası girin.');
+            return;
+        }
+        
+        let sourceVal = ipVal;
+        if (!/^\d+$/.test(ipVal)) {
+            let cleanIp = ipVal.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+            sourceVal = `http://${cleanIp}:8080/video`;
+        }
+        
+        const saveBtn = document.getElementById('saveIpBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 0.75rem;"></i>';
+        
+        fetch('/api/save_camera_source', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: sourceVal })
+        })
+        .then(res => res.json())
+        .then(data => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save" style="font-size: 0.85rem;"></i>';
+            if (data.status === 'success') {
+                alert('Kamera kaynağı başarıyla kaydedildi: ' + sourceVal);
+                const rawStream = document.getElementById('rawStream');
+                if (rawStream) {
+                    rawStream.src = sourceVal;
+                }
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save" style="font-size: 0.85rem;"></i>';
+            alert('Bağlantı hatası oluştu.');
+        });
+    }
+
+    let isRunning = false;
+    let knownEventCount = 0;
+    let pollInterval = null;
+
+    const btn = document.getElementById('visionToggleBtn');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const toggleText = document.getElementById('toggleText');
+    const rawStream = document.getElementById('rawStream');
+    const liveStream = document.getElementById('liveStream');
+    const streamOverlay = document.getElementById('streamOverlay');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const recIcon = document.getElementById('recIcon');
+    const statusBadge = document.getElementById('statusBadge');
+
+    function toggleVision() {
+        if (isRunning) {
+            stopVision();
+        } else {
+            startVision();
+        }
+    }
+
+    function startVision() {
+        // UI: Yükleniyor durumuna geç
+        btn.disabled = true;
+        toggleText.textContent = 'Başlatılıyor...';
+        streamOverlay.style.display = 'none';
+        loadingOverlay.style.display = 'block';
+        
+        // Reset event counts and clear container for new session
+        knownEventCount = 0;
+        const container = document.getElementById('logContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center mt-5 text-muted" id="emptyLogMsg">
+                    <i class="fas fa-history fa-2x mb-2 opacity-25"></i>
+                    <p class="small">Henüz bir hareket tespit edilmedi.</p>
+                </div>
+            `;
+        }
+
+        fetch('/api/start_vision', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                isRunning = true;
+                
+                // 2 sn bekle, sonra MJPEG stream'i bağla (modelin yüklenmesini bekle)
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                    rawStream.style.display = 'none';
+                    liveStream.src = '/video_feed?' + Date.now();
+                    liveStream.style.display = 'block';
+                    recIcon.style.display = 'block';
+                    
+                    // Show capture button
+                    const captureBtn = document.getElementById('captureBtn');
+                    if (captureBtn) captureBtn.style.display = 'inline-block';
+                    
+                    btn.disabled = false;
+                    btn.className = 'btn btn-outline-danger rounded-pill px-4';
+                    toggleIcon.className = 'fas fa-stop-circle me-1';
+                    toggleText.textContent = 'Sistemi Durdur';
+                    
+                    statusBadge.style.display = 'block';
+                    statusBadge.textContent = '🟢 Aktif';
+                    statusBadge.className = 'position-absolute top-0 start-0 m-3 badge bg-success';
+                    
+                    // Log polling başlat
+                    startPolling();
+                }, 3000);
+            });
+    }
+
+    function stopVision() {
+        btn.disabled = true;
+        toggleText.textContent = 'Durduruluyor...';
+
+        fetch('/api/stop_vision', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                isRunning = false;
+                
+                liveStream.src = '';
+                liveStream.style.display = 'none';
+                rawStream.style.display = 'none';
+                streamOverlay.style.display = 'block';
+                loadingOverlay.style.display = 'none';
+                recIcon.style.display = 'none';
+                
+                // Hide capture button
+                const captureBtn = document.getElementById('captureBtn');
+                if (captureBtn) captureBtn.style.display = 'none';
+                
+                btn.disabled = false;
+                btn.className = 'btn btn-premium rounded-pill px-4';
+                toggleIcon.className = 'fas fa-play-circle me-1';
+                toggleText.textContent = 'Sistemi Başlat';
+                
+                statusBadge.style.display = 'block';
+                statusBadge.textContent = '⏹ Durduruldu';
+                statusBadge.className = 'position-absolute top-0 start-0 m-3 badge bg-secondary';
+                
+                if (pollInterval) clearInterval(pollInterval);
+            });
+    }
+
+    function startPolling() {
+        pollInterval = setInterval(() => {
+            if (!isRunning) return;
+            
+            fetch('/api/vision_status')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalEventsBadge').innerText = data.total_events + ' Olay';
+                    
+                    if (!data.events || data.events.length < knownEventCount) {
+                        knownEventCount = 0;
+                        const container = document.getElementById('logContainer');
+                        if (container) {
+                            container.innerHTML = `
+                                <div class="text-center mt-5 text-muted" id="emptyLogMsg">
+                                    <i class="fas fa-history fa-2x mb-2 opacity-25"></i>
+                                    <p class="small">Henüz bir hareket tespit edilmedi.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    if (data.events && data.events.length > 0) {
+                        if (data.events.length > knownEventCount) {
+                            const emptyMsg = document.getElementById('emptyLogMsg');
+                            if (emptyMsg) emptyMsg.style.display = 'none';
+                            const newEvents = data.events.slice(knownEventCount);
+                            const container = document.getElementById('logContainer');
+                            
+                            newEvents.forEach(ev => {
+                                const isGiris = ev.action === 'GIRIS';
+                                const color = isGiris ? 'success' : 'danger';
+                                const icon = isGiris ? 'fa-arrow-down' : 'fa-arrow-up';
+                                const sign = isGiris ? '+' : '';
+                                
+                                const div = document.createElement('div');
+                                div.className = `log-item d-flex justify-content-between align-items-center p-3 mb-2 rounded-3 border border-${color} border-opacity-25 bg-dark`;
+                                div.innerHTML = `
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3 rounded overflow-hidden shadow-sm" style="width: 48px; height: 48px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center;">
+                                            ${ev.image_path ? `<img src="/static/${ev.image_path}" class="w-100 h-100" style="object-fit: cover;">` : `<i class="fas fa-image opacity-25"></i>`}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-${color} bg-opacity-10 text-${color} me-2"><i class="fas ${icon}"></i> ${ev.action}</span>
+                                            <span class="fw-bold text-white">${ev.product_name}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fs-5 fw-bold text-${color}">${sign}${ev.quantity_delta}</div>
+                                        <small class="text-dim" style="font-size: 0.7rem;">%${Math.round(ev.confidence*100)} Güven</small>
+                                    </div>
+                                `;
+                                container.prepend(div);
+                            });
+                            
+                            knownEventCount = data.events.length;
+                        }
+                    }
+                });
+        }, 1500);
+    }
+
+    function captureAndAnalyze() {
+        const captureBtn = document.getElementById('captureBtn');
+        if (!captureBtn) return;
+        const originalHtml = captureBtn.innerHTML;
+        
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Analiz Ediliyor...';
+        
+        fetch('/api/capture_and_analyze', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = originalHtml;
+                
+                if (data.status === 'success') {
+                    Swal.fire({
+                        title: 'Teyit Başarılı!',
+                        text: data.message,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        background: '#1e1b4b',
+                        color: '#ffffff'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata',
+                        text: data.message,
+                        icon: 'error',
+                        background: '#1e1b4b',
+                        color: '#ffffff'
+                    });
+                }
+            })
+            .catch(err => {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = originalHtml;
+                Swal.fire({
+                    title: 'Hata',
+                    text: 'İletişim hatası oluştu.',
+                    icon: 'error',
+                    background: '#1e1b4b',
+                    color: '#ffffff'
+                });
+            });
+    }
+</script>
+
+{% endblock %}

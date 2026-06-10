@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 47
+names: ['apple', 'banana', 'beef', 'beetroot', 'blueberries', 'bread', 'broccoli', 'butter', 'cabbage', 'carrot', 'cauliflower', 'cheese', 'chicken', 'chocolate', 'corn', 'cucumber', 'eggplant', 'eggs', 'flour', 'garlic', 'ginger', 'goat_cheese', 'green_beans', 'ground_beef', 'ham', 'heavy_cream', 'jalapeno', 'lemon', 'lettuce', 'mayonnaise', 'milk', 'mushrooms', 'natural_yoghurt', 'okra', 'onion', 'orange', 'peas', 'pepper', 'potato', 'radish', 'shrimp', 'spinach', 'strawberries', 'sugar', 'sweet_potato', 'tomato', 'turnip']
+
+roboflow:
+  workspace: projes-workspace
+  project: fridge-inventory-v1
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/projes-workspace/fridge-inventory-v1/dataset/2

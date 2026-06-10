@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold mb-2">Hareket Geçmişi</h2>
+        <p class="text-dim">Buzdolabında gerçekleşen tüm fiziksel ve dijital işlemler.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="timeline">
+            {% for index, row in logs.iterrows() %}
+            <div class="timeline-item glass-card mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex gap-3">
+                        <div class="action-icon {% if row['action'] == 'ADD' %}bg-success{% else %}bg-danger{% endif %} shadow-sm">
+                            <i class="fas {% if row['action'] == 'ADD' %}fa-plus{% else %}fa-minus{% endif %}"></i>
+                        </div>
+                        <div>
+                            <h5 class="m-0 fw-bold">{{ row['class_name'] }}</h5>
+                            <p class="m-0 text-dim small">
+                                {{ row['quantity_before'] }} adetten {{ row['quantity_after'] }} adete güncellendi.
+                            </p>
+                            <span class="badge bg-dark mt-2 opacity-50">{{ row['source'] }}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <p class="m-0 small text-accent">{{ row['timestamp'] }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline-item {
+        border-left: 4px solid var(--primary);
+        transition: all 0.3s ease;
+    }
+    .timeline-item:hover {
+        border-left-width: 8px;
+    }
+    .action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    }
+</style>
+
+{% endblock %}

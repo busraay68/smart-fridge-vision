@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-12 text-center mb-5">
+        <h1 class="display-3 fw-bold text-white mb-2">Smart Fridge OS</h1>
+        <p class="text-dim fs-4">Mutfaktaki yapay zeka asistanınız.</p>
+    </div>
+
+    <div class="col-12">
+        <div class="bubble-grid">
+            <a href="{{ url_for('scan') }}" class="bubble-item">
+                <div class="bubble-icon bg-primary shadow-primary">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <span>Ürün Tara</span>
+            </a>
+
+            <a href="{{ url_for('vision_events') }}" class="bubble-item">
+                <div class="bubble-icon shadow-sm" style="background: linear-gradient(135deg, #06b6d4, #6366f1); box-shadow: 0 15px 35px rgba(6, 182, 212, 0.4);">
+                    <i class="fas fa-video"></i>
+                </div>
+                <span>Vision Engine</span>
+            </a>
+            
+            <a href="{{ url_for('inventory') }}" class="bubble-item">
+                <div class="bubble-icon bg-secondary shadow-secondary">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+                <span>Envanter</span>
+            </a>
+            
+            <a href="{{ url_for('recipes') }}" class="bubble-item">
+                <div class="bubble-icon bg-success shadow-success">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <span>Tarifler</span>
+            </a>
+            
+            <a href="{{ url_for('stats') }}" class="bubble-item">
+                <div class="bubble-icon bg-info shadow-info">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <span>İstatistik</span>
+            </a>
+            
+            <a href="{{ url_for('shopping') }}" class="bubble-item">
+                <div class="bubble-icon bg-warning shadow-warning">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <span>Alışveriş</span>
+            </a>
+            
+            <a href="{{ url_for('logs') }}" class="bubble-item">
+                <div class="bubble-icon bg-danger shadow-danger">
+                    <i class="fas fa-history"></i>
+                </div>
+                <span>Geçmiş</span>
+            </a>
+
+            <a href="{{ url_for('contacts') }}" class="bubble-item">
+                <div class="bubble-icon shadow-sm" style="background: linear-gradient(135deg, #25d366, #128c7e); box-shadow: 0 15px 35px rgba(37, 211, 102, 0.4);">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <span>WP Rehber</span>
+            </a>
+
+            <a href="{{ url_for('admin') }}" class="bubble-item">
+                <div class="bubble-icon bg-dark shadow-sm border border-danger border-opacity-25">
+                    <i class="fas fa-user-shield text-danger"></i>
+                </div>
+                <span class="text-danger">ADMİN</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bubble-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .bubble-item {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .bubble-item:hover {
+        transform: scale(1.1);
+    }
+    
+    .bubble-icon {
+        width: 120px;
+        height: 120px;
+        border-radius: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 3rem;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .bubble-item span {
+        color: var(--text-white);
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+    
+    .shadow-primary { box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4); }
+    .shadow-secondary { box-shadow: 0 15px 35px rgba(168, 85, 247, 0.4); }
+    .shadow-success { box-shadow: 0 15px 35px rgba(34, 197, 94, 0.4); }
+    .shadow-info { box-shadow: 0 15px 35px rgba(34, 211, 238, 0.4); }
+    .shadow-warning { box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+    .shadow-danger { box-shadow: 0 15px 35px rgba(239, 68, 68, 0.4); }
+</style>
+
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="fw-bold mb-2">WhatsApp Rehberi</h2>
+        <p class="text-dim">Alışveriş listesini göndermek istediğiniz kişileri yönetin.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Sol Sütun: Yeni Kişi Ekle / Güncelle -->
+    <div class="col-md-4">
+        <div class="glass-card">
+            <h5 class="mb-4 text-primary fw-bold" id="form-title"><i class="fas fa-user-plus me-2"></i> Kişi Ekle</h5>
+            <form method="POST" id="contact-form">
+                <input type="hidden" name="action" id="form-action" value="add">
+                <input type="hidden" name="id" id="contact-id" value="">
+                
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Ad Soyad</label>
+                    <input type="text" name="name" id="contact-name" class="form-control bg-dark border-secondary text-white" placeholder="Örn: Eren Şeremet" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Telefon Numarası</label>
+                    <input type="tel" name="phone" id="contact-phone" class="form-control bg-dark border-secondary text-white" placeholder="Örn: 5551234567" required>
+                    <div class="form-text text-muted" style="font-size: 0.72rem;">Ülke kodu olmadan 10 hane olarak girebilirsiniz.</div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-premium flex-grow-1" id="submit-btn">Rehbere Ekle</button>
+                    <button type="button" class="btn btn-outline-secondary" id="cancel-btn" style="display: none;" onclick="resetForm()">Vazgeç</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sağ Sütun: Kişi Listesi -->
+    <div class="col-md-8">
+        <div class="glass-card">
+            <h5 class="mb-4 fw-bold"><i class="fas fa-address-book text-primary me-2"></i> Kayıtlı Kişiler</h5>
+            <div class="table-responsive">
+                <table class="custom-table w-100">
+                    <thead>
+                        <tr class="text-dim small text-uppercase">
+                            <th class="ps-4">Ad Soyad</th>
+                            <th>Telefon</th>
+                            <th class="text-end pe-4">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contact in contacts %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-white">{{ contact.name }}</td>
+                            <td>{{ contact.phone }}</td>
+                            <td class="text-end pe-4">
+                                <button onclick="editContact({{ contact.id }}, '{{ contact.name }}', '{{ contact.phone }}')" class="btn btn-sm btn-outline-info border-0 me-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Bu kişiyi silmek istediğinize emin misiniz?');">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ contact.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not contacts %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted p-4 italic">Rehberiniz boş. Ürün listesini göndermek için kişi ekleyin.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editContact(id, name, phone) {
+        document.getElementById('form-title').innerHTML = '<i class="fas fa-user-edit me-2"></i> Kişiyi Güncelle';
+        document.getElementById('form-action').value = 'update';
+        document.getElementById('contact-id').value = id;
+        document.getElementById('contact-name').value = name;
+        document.getElementById('contact-phone').value = phone;
+        document.getElementById('submit-btn').textContent = 'Güncelle';
+        document.getElementById('cancel-btn').style.display = 'inline-block';
+    }
+
+    function resetForm() {
+        document.getElementById('form-title').innerHTML = '<i class="fas fa-user-plus me-2"></i> Kişi Ekle';
+        document.getElementById('form-action').value = 'add';
+        document.getElementById('contact-id').value = '';
+        document.getElementById('contact-form').reset();
+        document.getElementById('submit-btn').textContent = 'Rehbere Ekle';
+        document.getElementById('cancel-btn').style.display = 'none';
+    }
+</script>
+
+{% endblock %}

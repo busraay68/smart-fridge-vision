@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold mb-2 text-danger">Sistem Yönetimi</h2>
+        <p class="text-dim">Kritik sistem ayarları ve veri sıfırlama işlemleri.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center g-4">
+    <div class="col-md-6">
+        <div class="glass-card border-danger border-opacity-25 h-100">
+            <h5 class="text-danger mb-4 fw-bold"><i class="fas fa-trash-alt me-2"></i> Veri Sıfırlama</h5>
+            <p class="text-dim mb-4">Aşağıdaki işlem tüm envanteri ve hareket geçmişini kalıcı olarak silecektir. Bu
+                işlem geri alınamaz!</p>
+
+            <button class="btn btn-outline-danger w-100 py-3" data-bs-toggle="modal"
+                data-bs-target="#clearConfirmModal">
+                <i class="fas fa-exclamation-triangle me-2"></i> Tüm Verileri Temizle
+            </button>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="glass-card h-100">
+            <h5 class="text-primary mb-4 fw-bold"><i class="fas fa-tools me-2"></i> Sistem Bilgisi</h5>
+            <div class="bg-dark bg-opacity-25 p-3 rounded-4 border border-secondary border-opacity-10">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-dim">Versiyon:</span>
+                    <span class="text-white">v2.1.0-Flash</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-dim">Motor:</span>
+                    <span class="text-white">Gemini 2.0 Flash</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-dim">Durum:</span>
+                    <span class="text-success">Stabil</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="glass-card">
+            <h5 class="text-info mb-4 fw-bold"><i class="fas fa-terminal me-2"></i> Yapay Zeka & Sistem Günlükleri</h5>
+            <div class="bg-dark bg-opacity-75 p-3 rounded-4 border border-secondary border-opacity-25 font-monospace"
+                style="max-height: 300px; overflow-y: auto; font-size: 0.85rem; line-height: 1.5;">
+                {% if system_logs is defined and system_logs is not none and not system_logs.empty %}
+                {% for index, row in system_logs.iterrows() %}
+                <div class="mb-2 d-flex align-items-start border-bottom border-secondary border-opacity-10 pb-2">
+                    <span class="text-dim me-3">[{{ row['created_at'] }}]</span>
+                    <span class="badge bg-secondary bg-opacity-20 text-info me-3"
+                        style="min-width: 90px; text-align: center;">{{ row['log_type'] }}</span>
+                    <span class="text-white flex-grow-1" style="word-break: break-all;">{{ row['message'] }}</span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center m-0 py-4"><i class="fas fa-history me-2 opacity-50"></i>Henüz sistem
+                    günlüğü bulunmamaktadır.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Onay Modalı -->
+<div class="modal fade" id="clearConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-danger border-opacity-25"
+            style="background: rgba(20, 10, 10, 0.98);">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger fw-bold">Emin misiniz?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-bomb fa-4x text-danger mb-4"></i>
+                <p class="text-white fs-5">Tüm buzdolabı verileri silinecek. Bu işlemden eminseniz onaylayın.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Vazgeç</button>
+                <form action="{{ url_for('clear_inventory') }}" method="POST">
+                    <button type="submit" class="btn btn-danger px-5">Evet, Her Şeyi Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Smart Fridge | AI Powered</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+    <div class="text-center">
+        <div class="spinner-custom mb-3"></div>
+        <h4 class="text-white">Gemini AI Analiz Ediyor...</h4>
+        <p class="text-muted">Buzdolabı içeriği taranıyor.</p>
+    </div>
+</div>
+
+<div class="container-fluid min-vh-100 d-flex flex-column">
+    <!-- Header / Top Bar -->
+    <header class="p-4 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            {% if request.endpoint != 'index' %}
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary rounded-circle p-0 d-flex justify-content-center align-items-center shadow-sm" style="width: 45px; height: 45px; border-color: rgba(255,255,255,0.1);">
+                <i class="fas fa-arrow-left text-white"></i>
+            </a>
+            {% endif %}
+            <div class="ms-2">
+                <h4 class="m-0 fw-bold text-white">FRIDGE OS</h4>
+                <p class="m-0 small text-dim d-none d-md-block">Akıllı Mutfak Sistemi</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <button id="voice-btn" class="btn btn-glass-primary rounded-pill px-4">
+                <i class="fas fa-microphone me-2"></i> Sesli Komut
+            </button>
+            
+            <!-- AI Analiz Durumu (Dropdown) -->
+            <div class="dropdown" id="ai-task-dropdown-container">
+                <button class="btn btn-sm btn-glass-primary rounded-pill px-3 py-2 dropdown-toggle d-flex align-items-center gap-2" type="button" id="aiTasksDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" style="border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); font-size: 0.8rem; height: 38px;">
+                    <i class="fas fa-robot text-primary" id="ai-robot-icon"></i>
+                    <span id="ai-status-text" class="text-white">AI Beklemede</span>
+                    <span id="ai-spinner-icon" style="display: none;"><i class="fas fa-spinner fa-spin text-warning ms-1"></i></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-3 border border-secondary border-opacity-25 shadow-lg rounded-4" aria-labelledby="aiTasksDropdownBtn" id="ai-tasks-list" style="width: 320px; background: rgba(30, 27, 75, 0.95); backdrop-filter: blur(10px); max-height: 400px; overflow-y: auto;">
+                    <li class="dropdown-header text-dim fw-bold border-bottom border-secondary border-opacity-25 pb-2 mb-2">AI Analiz Akışı</li>
+                    <div id="ai-tasks-items-container">
+                        <div class="text-center py-3 text-muted small">
+                            <i class="fas fa-info-circle mb-1 d-block opacity-50"></i>
+                            Aktif analiz bulunmuyor.
+                        </div>
+                    </div>
+                </ul>
+            </div>
+
+            <div class="d-none d-sm-flex align-items-center gap-2 bg-dark bg-opacity-25 p-2 rounded-pill border border-secondary border-opacity-10">
+                <span class="badge bg-success rounded-circle p-1" style="width: 10px; height: 10px;"> </span>
+                <span class="small text-success me-1">Çevrimiçi</span>
+                <span class="badge bg-primary text-white me-2" style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.2) !important; border: 1px solid rgba(99, 102, 241, 0.4); color: #9ab4eb !important;">{{ system_status }}</span>
+                <img src="https://ui-avatars.com/api/?name=Eren+Seremet&background=6366f1&color=fff" class="rounded-circle shadow-sm" width="35" alt="Profile">
+            </div>
+        </div>
+    </header>
+
+    <!-- Ana İçerik -->
+    <main class="flex-grow-1 p-4 p-md-5">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<style>
+    .btn-glass-primary {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        color: var(--primary);
+        transition: all 0.3s ease;
+    }
+    .btn-glass-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Global Loading Show/Hide
+    function showLoading() {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+    
+    // Form submitlerinde otomatik loading göster
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => showLoading());
+    });
+
+    // Voice Recognition Logic
+    const voiceBtn = document.getElementById('voice-btn');
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'tr-TR';
+        
+        voiceBtn.onclick = () => {
+            recognition.start();
+            voiceBtn.classList.add('btn-primary');
+            voiceBtn.classList.remove('btn-outline-primary');
+            voiceBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Dinleniyor...';
+        };
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            fetch('/api/voice', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: text})
+            })
+            .then(res => res.json())
+            .then(data => {
+                const utterance = new SpeechSynthesisUtterance(data.response);
+                utterance.lang = 'tr-TR';
+                window.speechSynthesis.speak(utterance);
+                alert("AI Cevabı: " + data.response);
+            });
+        };
+
+        recognition.onend = () => {
+            voiceBtn.classList.remove('btn-primary');
+            voiceBtn.classList.add('btn-outline-primary');
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> Sesli Komut';
+        };
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let activeConfirmModal = false;
+    function checkAiConfirmations() {
+        if (activeConfirmModal) return;
+        
+        fetch('/api/pending_confirmations')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const conf = data[0];
+                    activeConfirmModal = true;
+                    
+                    Swal.fire({
+                        title: 'Yapay Zeka Teyit Uyarısı',
+                        html: `
+                            <div class="text-center">
+                                ${conf.image_path ? `<img src="/static/${conf.image_path}" class="rounded mb-3 shadow" style="max-height: 120px; max-width: 100%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1);">` : ''}
+                                <p class="text-white mb-2">Kameranın <strong>${conf.original_name}</strong> olarak algıladığı nesneyi, Yapay Zeka <strong>${conf.ai_name}</strong> olarak teyit etti.</p>
+                                <p class="text-muted small">Bu düzeltmeyi envanterinize uygulamak istiyor musunuz?</p>
+                            </div>
+                        `,
+                        background: '#1e1b4b',
+                        color: '#ffffff',
+                        showCancelButton: true,
+                        confirmButtonText: 'Evet, Düzelt',
+                        cancelButtonText: 'Hayır, Kalsın',
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#ef4444',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        const action = result.isConfirmed ? 'accept' : 'reject';
+                        
+                        fetch('/api/resolve_confirmation', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: conf.id, action: action })
+                        })
+                        .then(res => res.json())
+                        .then(resData => {
+                            activeConfirmModal = false;
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Başarılı!',
+                                    text: 'Envanter başarıyla güncellendi.',
+                                    icon: 'success',
+                                    background: '#1e1b4b',
+                                    color: '#ffffff',
+                                    confirmButtonColor: '#6366f1',
+                                    timer: 1500
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                checkAiConfirmations();
+                            }
+                        })
+                        .catch(err => {
+                            activeConfirmModal = false;
+                        });
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("AI Confirmation check error:", err);
+            });
+    }
+    
+    setInterval(checkAiConfirmations, 4000);
+    setTimeout(checkAiConfirmations, 1000);
+
+    function pollAiTasks() {
+        fetch('/api/ai_tasks')
+            .then(res => res.json())
+            .then(data => {
+                const btn = document.getElementById('aiTasksDropdownBtn');
+                const icon = document.getElementById('ai-robot-icon');
+                const text = document.getElementById('ai-status-text');
+                const spinner = document.getElementById('ai-spinner-icon');
+                const listContainer = document.getElementById('ai-tasks-items-container');
+                
+                if (!btn || !listContainer) return;
+                
+                if (data.active_count > 0) {
+                    btn.classList.add('border-warning');
+                    icon.className = 'fas fa-robot text-warning';
+                    text.textContent = 'AI Analiz Ediyor...';
+                    text.className = 'text-warning';
+                    spinner.style.display = 'inline-block';
+                } else {
+                    btn.classList.remove('border-warning');
+                    icon.className = 'fas fa-robot text-primary';
+                    text.textContent = 'AI Beklemede';
+                    text.className = 'text-white';
+                    spinner.style.display = 'none';
+                }
+                
+                if (data.tasks && data.tasks.length > 0) {
+                    let html = '';
+                    data.tasks.forEach(t => {
+                        let badgeColor = 'secondary';
+                        let statusText = 'Bekliyor';
+                        let rowBorder = 'rgba(255,255,255,0.05)';
+                        
+                        if (t.status === 'checking') {
+                            badgeColor = 'warning';
+                            statusText = 'İnceleniyor';
+                            rowBorder = 'rgba(245, 158, 11, 0.2)';
+                        } else if (t.status === 'verified') {
+                            badgeColor = 'success';
+                            statusText = 'Doğrulandı';
+                        } else if (t.status === 'discrepancy') {
+                            badgeColor = 'danger';
+                            statusText = 'Uyuşmazlık';
+                            rowBorder = 'rgba(239, 68, 68, 0.2)';
+                        } else if (t.status === 'failed') {
+                            badgeColor = 'danger';
+                            statusText = 'Hata';
+                        }
+                        
+                        html += `
+                            <div class="d-flex align-items-center gap-3 p-2 mb-2 rounded border" style="border-color: ${rowBorder}; background: rgba(255,255,255,0.01); font-size: 0.85rem;">
+                                <div class="rounded overflow-hidden shadow-sm flex-shrink-0" style="width: 38px; height: 38px; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center;">
+                                    ${t.image_path ? `<img src="/static/${t.image_path}" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fas fa-image opacity-25"></i>`}
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold text-white text-truncate" style="max-width: 120px;">${t.product_name}</span>
+                                        <span class="badge bg-${badgeColor} bg-opacity-25 text-${badgeColor}" style="font-size: 0.65rem;">${statusText}</span>
+                                    </div>
+                                    <div class="small text-muted text-truncate" style="font-size: 0.72rem;">
+                                        ${t.status === 'checking' ? `<i class="fas fa-spinner fa-spin text-warning me-1"></i>Analiz ediliyor...` : ''}
+                                        ${t.status === 'verified' ? `<i class="fas fa-check-circle text-success me-1"></i>Teyit Edildi` : ''}
+                                        ${t.status === 'discrepancy' ? `<i class="fas fa-exclamation-triangle text-danger me-1"></i>AI Tespiti: ${t.ai_result}` : ''}
+                                        ${t.status === 'failed' ? `<i class="fas fa-times-circle text-danger me-1"></i>Hata: ${t.ai_result}` : ''}
+                                        ${t.status === 'pending' ? `<i class="fas fa-clock text-muted me-1"></i>Sırada bekliyor...` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    listContainer.innerHTML = html;
+                } else {
+                    listContainer.innerHTML = `
+                        <div class="text-center py-3 text-muted small">
+                            <i class="fas fa-info-circle mb-1 d-block opacity-50"></i>
+                            Aktif analiz bulunmuyor.
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => console.error("Poll AI tasks error:", err));
+    }
+    
+    setInterval(pollAiTasks, 2500);
+    pollAiTasks();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# SmartFridge - Raspberry Pi Requirements
+# Flask web framework
+flask
+
+# Image processing
+Pillow
+
+# Data handling
+pandas
+numpy
+
+# OpenCV (headless - no GUI needed on Pi)
+opencv-python-headless
+
+# YOLO object detection
+ultralytics
+
+# Google Gemini AI
+google-generativeai
+
+# Other utilities
+requests
+PyYAML

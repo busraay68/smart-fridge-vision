@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+:root {
+    --primary: #6366f1;
+    --secondary: #a855f7;
+    --accent: #22d3ee;
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-white: #f8fafc;
+    --text-dim: #94a3b8;
+}
+
+body {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+    color: var(--text-white);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--glass-border);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar h3 {
+    font-weight: 700;
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+}
+
+.nav-link {
+    color: var(--text-dim);
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-link:hover, .nav-link.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    transform: translateX(5px);
+}
+
+.nav-link i {
+    font-size: 1.2rem;
+}
+
+/* Card & Glassmorphism */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.btn-premium {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    padding: 12px 28px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.btn-premium:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+    color: white;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+}
+
+.spinner-custom {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(99, 102, 241, 0.1);
+    border-top: 5px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Inventory Table */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.custom-table tr {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.custom-table td, .custom-table th {
+    padding: 16px;
+}
+
+.custom-table tr td:first-child { border-radius: 12px 0 0 12px; }
+.custom-table tr td:last-child { border-radius: 0 12px 12px 0; }

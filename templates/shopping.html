@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="fw-bold mb-2">Alışveriş Listesi</h2>
+        <p class="text-dim">Eksik ürünleri takip edin ve listenizi yönetin.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="glass-card">
+            <h5 class="mb-4 text-primary fw-bold"><i class="fas fa-plus me-2"></i> Ürün Ekle</h5>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Ürün Adı</label>
+                    <input type="text" name="item" class="form-control bg-dark border-secondary text-white" placeholder="Örn: Ekmek" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-dim">Miktar</label>
+                    <input type="number" name="qty" class="form-control bg-dark border-secondary text-white" value="1" min="1">
+                </div>
+                <button type="submit" class="btn btn-premium w-100">Listeye Ekle</button>
+            </form>
+        </div>
+
+        <div class="glass-card mt-4">
+            <h5 class="mb-3 text-warning fw-bold"><i class="fas fa-lightbulb me-2"></i> Önerilen Ürünler</h5>
+            <p class="small text-dim mb-3">Buzdolabında azalan veya tükenen ürünleri hızlıca alışveriş listenize ekleyin:</p>
+            <div class="list-group list-group-flush bg-transparent">
+                {% for index, row in recommendations.iterrows() %}
+                <div class="list-group-item bg-transparent border-secondary border-opacity-10 px-0 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-white fs-6">{{ row['class_name'] }}</div>
+                        <div class="small mt-1">
+                            {% if row['quantity'] == 0 %}
+                            <span class="text-danger small"><i class="fas fa-times-circle me-1"></i> Tükendi</span>
+                            {% else %}
+                            <span class="text-warning small"><i class="fas fa-exclamation-triangle me-1"></i> Sadece {{ row['quantity'] }} adet kaldı</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <form method="POST" class="m-0 d-flex align-items-center gap-2">
+                        <input type="hidden" name="item" value="{{ row['class_name'] }}">
+                        <input type="number" name="qty" class="form-control form-control-sm bg-dark border-secondary text-white text-center rounded-pill" value="1" min="1" style="width: 55px; height: 28px; font-size: 0.8rem;">
+                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 text-uppercase fw-semibold" style="font-size: 0.75rem; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-plus me-1"></i> Ekle
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+                {% if recommendations.empty %}
+                <div class="text-center text-white-50 py-4 small italic">
+                    <i class="fas fa-check-circle text-success me-1"></i> Tüm stoklar yeterli düzeyde!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="m-0 fw-bold"><i class="fas fa-shopping-basket text-primary me-2"></i> Alınacaklar</h5>
+                
+                {% if not shop_list.empty %}
+                <div class="dropdown">
+                    <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2 rounded-pill px-3 py-2" type="button" id="wpSendDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" style="background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.3); color: #25d366;">
+                        <i class="fab fa-whatsapp"></i> WP ile Gönder
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary border-opacity-25 shadow-lg rounded-3" aria-labelledby="wpSendDropdownBtn" style="background: rgba(30, 27, 75, 0.95); backdrop-filter: blur(10px);">
+                        <li class="dropdown-header text-dim fw-bold pb-2 border-bottom border-secondary border-opacity-25">Alıcı Seçin</li>
+                        {% for contact in contacts %}
+                        <li>
+                            <a class="dropdown-item py-2 rounded-2" href="#" onclick="sendWpList({{ contact.id }})">
+                                <i class="fas fa-user me-2 text-primary"></i> {{ contact.name }} ({{ contact.phone }})
+                            </a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a class="dropdown-item disabled py-2" href="#" style="color: rgba(255,255,255,0.55) !important;">Rehber boş!</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 text-warning" href="{{ url_for('contacts') }}">
+                                <i class="fas fa-plus-circle me-1"></i> Kişi Ekle
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="custom-table w-100">
+                    <thead>
+                        <tr class="text-dim small text-uppercase">
+                            <th class="ps-4">Ürün</th>
+                            <th class="text-center">Adet</th>
+                            <th class="text-end pe-4">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in shop_list.iterrows() %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ row['class_name'] }}</td>
+                            <td class="text-center">{{ row['quantity'] }}</td>
+                            <td class="text-end pe-4">
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="delete" value="{{ row['id'] }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if shop_list.empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted p-4 italic">Listeniz şu an boş.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendWpList(contactId) {
+        showLoading();
+        
+        fetch('/api/whatsapp/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: contactId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('loading-overlay').style.display = 'none';
+            
+            if (data.status === 'success' && data.url) {
+                window.open(data.url, '_blank');
+                
+                Swal.fire({
+                    title: 'WhatsApp Açılıyor',
+                    text: 'Alışveriş listesi gönderilmek üzere WhatsApp web yönlendiriliyor.',
+                    icon: 'success',
+                    background: '#1e1b4b',
+                    color: '#ffffff',
+                    confirmButtonColor: '#25d366'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Hata',
+                    text: data.message,
+                    icon: 'error',
+                    background: '#1e1b4b',
+                    color: '#ffffff'
+                });
+            }
+        })
+        .catch(err => {
+            document.getElementById('loading-overlay').style.display = 'none';
+            Swal.fire({
+                title: 'Hata',
+                text: 'İletişim hatası oluştu.',
+                icon: 'error',
+                background: '#1e1b4b',
+                color: '#ffffff'
+            });
+        });
+    }
+</script>
+
+{% endblock %}

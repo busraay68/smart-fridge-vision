@@ -1,0 +1,23 @@
+# Smart Fridge OS Özellikleri
+
+-> Kamera IP adresi kaydetme ve kalıcı hafızada tutma
+-> Canlı IP kamera yayını izleme
+-> YOLO modeli ile gerçek zamanlı nesne tespiti (Vision Engine)
+-> Canlı nesne giriş/çıkış hareketlerini anlık tespit akışında (Events) listeleme
+-> "Görüntü Al" butonu ile yayından anlık kare yakalayıp doğrudan Gemini AI ile nesne tespiti yapma
+-> Manuel veya otomatik tespit edilen olayları tek tıkla envantere işleme
+-> YOLO tespitlerinin doğrulunu arka planda asenkron olarak Gemini AI ile teyit etme
+-> YOLO ve Gemini sonuçları uyuşmadığında kullanıcıya SweetAlert2 onay popup'ı gösterme
+-> Üst barda arka plandaki AI doğrulama görevlerini canlı takip etme dropdown'ı
+-> Fotoğraflı görsel ürün yükleme ile manuel nesne tespiti (Scan)
+-> Envanter listesindeki ürünleri adet, son kullanma tarihi ve tazelik oranları ile takip etme
+-> Yeni ürünler için otomatik 5 gün sonraya SKT ve %100 tazelik oranı atama
+-> Envanter durumuna göre dinamik grafik ve istatistik paneli (Stats)
+-> Şefin Önerileri bölümünde interaktif envanter slotlarından malzeme seçerek yemek tarifi önerme
+-> Buzdolabında azalan veya tükenen ürünleri otomatik "Önerilen Ürünler" olarak alışveriş listesinde gösterme
+-> Alışveriş listesine önerilen ürünleri seçilen miktarda hızlıca ekleme
+-> Alışveriş listesinde ürün ekleme, silme ve adet güncelleme
+-> WhatsApp rehberi (Kişi ekleme, silme ve güncelleme paneli)
+-> Alışveriş listesini rehberden seçilen kişiye WhatsApp Web entegrasyonu ile metin formatında gönderme
+-> Sistem işlem loglarını detaylı olarak geçmiş (Logs) panelinde izleme
+-> Raspberry Pi'ye tek tıkla projeyi yedekleyip dağıtan otomasyon betiği (deploy.py)
