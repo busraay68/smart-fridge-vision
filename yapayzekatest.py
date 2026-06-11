@@ -3,7 +3,7 @@ import PIL.Image
 import os
 
 # API Anahtarını buraya yaz
-genai.configure(api_key="AIzaSyA7Wn4oz24AQjigD6LjDAWERSM0M5Y9ogo")
+genai.configure(api_key=" ")
 
 # Modeli seç (Flash modeli bu iş için en hızlı ve ücretsizdir)
 model = genai.GenerativeModel('gemini-flash-latest')
